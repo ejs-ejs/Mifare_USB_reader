@@ -35,7 +35,8 @@
 // command inteface
 #include <SerialCommand.h>
 
-#define LED 4
+#define LED_OK 4
+#define LED_ERR 13
 
 #define SS_PIN 10
 #define RST_PIN 9
@@ -47,7 +48,7 @@ SerialCommand sCmd;     // The SerialCommand object
 byte readCard[__CARD_LENGTH];   // Stores scanned ID read from RFID Module
 byte rCard[__CARD_LENGTH];   // reversed card ID
 
-byte invertUID = 1;
+byte reverseUID = 1;
 
 byte validCard[] = {0xE5, 0x4B, 0xA9, 0x65};
 //
@@ -55,12 +56,12 @@ byte validCard[] = {0xE5, 0x4B, 0xA9, 0x65};
 long tDelay = 500; // delay time between scans
 long tNow = 0;
 long tPrev = 0;
-byte ledState = 0;
 byte kbdReport = 0;
 
 
 void setup() {
-  pinMode(LED, OUTPUT);
+  pinMode(LED_OK, OUTPUT);
+  pinMode(LED_ERR, OUTPUT);
   Serial.begin(115200); // Initialize serial communications with the PC
   SPI.begin();      // Init SPI bus
   mfrc522.PCD_Init(); // Init MFRC522 card
@@ -70,7 +71,7 @@ void setup() {
 
   // Setup callbacks for SerialCommand commands
   sCmd.addCommand("STATE",   CMD_state);         // print state to serial port
-  sCmd.addCommand("INVERT",   CMD_invert);         // invert card's UID
+  sCmd.addCommand("REVERSE",   CMD_reverse);         // reverse card's UID byte order
   sCmd.addCommand("MASTER",   CMD_master);         // treat last card read as master card
   sCmd.addCommand("?", CMD_help);        // help un use
   sCmd.setDefaultHandler(CMD_help);      // Handler for command that isn't matched
@@ -85,7 +86,8 @@ void loop() {
 
   if ((tNow - tPrev) >= tDelay) {
     tPrev = tNow;
-    digitalWrite(LED, ledState);
+    digitalWrite(LED_OK, LOW);
+    digitalWrite(LED_ERR, LOW);
     if ( ! mfrc522.PICC_IsNewCardPresent()) {
       return;
     } else if ( ! mfrc522.PICC_ReadCardSerial()) { // Select one of the cards
@@ -105,12 +107,11 @@ void loop() {
       }
 
       if ( checkUID(readCard, validCard) ) {
-        ledState = 1;
-        digitalWrite(LED, ledState);
-        ledState = 0;
+        digitalWrite(LED_OK, HIGH);
         reportCardSerial();
         Serial.println(F(":\tWelcome, Master"));
       } else {
+        digitalWrite(LED_ERR, HIGH);
         reportCardSerial();
         Serial.println(F(":\t === Go away, Stranger ==="));
       }

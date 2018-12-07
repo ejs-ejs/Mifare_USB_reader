@@ -7,8 +7,8 @@ void CMD_state() {
   Serial.print(F("\t version "));
   Serial.println(__VERSION);
   Serial.println(F("=============================="));
-  Serial.print(F("\tUIDs inverted:\t"));
-  invertUID?Serial.println("Yes"):Serial.println("No");
+  Serial.print(F("\tUIDs reversed:\t"));
+  reverseUID?Serial.println("Yes"):Serial.println("No");
   Serial.println(F("=============================="));
   ShowReaderDetails();
   Serial.println(F("=============================="));
